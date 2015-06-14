@@ -1,0 +1,114 @@
+<begin "spec">
+This will be revised later on, as for now it's not even correct.
+
+
+Uses a TCP connection between 2 computers
+
+Does not provide any form of encryption itself, so tunneling over SSH is a good idea.
+
+Messages are GPG encrypted.
+
+The messages are base64 encoded (ascii armor), but this may change in the future.
+As of right now, I'm sending data using json, which using a binary format may break.
+
+All messages have an ID, which is a hash of the binary PGP message. This is
+assumed to be unique.
+
+Limits
+------
+
+A node may have time limits or file size limits (Or total disk usage limits)
+
+However, a node must hold a message for at least 1 day after it was recieved,
+accept any messages under 64k, and allow 10GB of space.
+
+A proof of work must be used for all messages.
+
+The proof of work is a number, x, that is incremented until the hash of
+
+    x:id
+
+starts with at least some number hex 0's
+
+x is a integer converted to a string
+id is the hash of the binary PGP message, as a lowercase hex string
+The number required depends on the node. Recommended value is 6.
+
+Syncing
+-------
+
+Nodes connect to other nodes. A node doesn't technically have to be port
+forwarded, but the server (the one getting a connection) must be.
+
+Not all nodes need to know other nodes. Every 10 minutes, a node picks a
+random node from its list of known nodes and syncs with it. The sync duration
+should be randomised by 2 minutes in either direction.
+
+All data transmitted is encoded in ASCII or is a big-endian number
+
+A = Client
+B = Server
+
+A -> B
+Client's protocol version
+
+B -> A
+Server's protocol version
+
+The protocol version is a number that is changed when further changes to the protocol would
+break backwards compatability.
+
+The version number must be padded to 16 bytes. Clients should delete null bytes
+when displaying the version number.
+
+If the server sees a protocol version that is not the same as it's own, it may just kill the
+connection without sending anything more. The version numbers don't need to increase, the program
+makes no attempt at backwards compatability right now.
+
+
+A -> B
+Amount of ID's that is going to be sent, represented as a 2 byte integer (big-endian)
+This allows the server to expect exactly how many recv calls it needs to use.
+
+A -> B
+List of known ID's. Since the ID's are fixed length, they may be sent with no
+formatting, the client can recieve them in 64 byte chunks (256 bit hex).
+
+B -> A
+See above. Send list of known ID's, only reversing A and B.
+
+
+Now both clients make a list of what messages they need to send to each other
+to be fully synced.
+
+A -> B
+
+All needed messages encoded in JSON. The format is
+
+    msgid: The message's ID
+    proof: Message's proof, see above.
+    gpg: The actual message as base64 GPG output, without the BEGIN and END
+        lines. Clients will reject this, unless it is decoded back into binary.
+
+
+B -> A
+See above.
+
+Both clients now have the same messages, and may disconnect.
+
+
+
+Bugs/General TODO:
+
+No protection against other nodes that take too long. This will hang the node
+until one of them disconnects. To fix this, set a timeout and just kill the
+connection if it is reached. (And possibly not connect to that node for a few
+weeks)
+
+Output is currently very verbose. This was useful when writing the code, but
+should be disabled or at least claened up.
+
+Lots of copy pasting code, this should really be cleaned up.
+
+Test to see if this works across computers or over the internet. It works fine
+on localhost.
