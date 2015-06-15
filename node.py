@@ -92,8 +92,8 @@ def sync(ip, port=3514):
     s.send(PROTOCOL_VERSION)
     serverver = s.recv(16)
     print("Connected to server")
-    print("Server version: {}".format(serverver.replace(b"\x00", b"")))
-    print("Client version: {}".format(PROTOCOL_VERSION.replace(b"\x00", b"")))
+    print("Server version: {}".format(serverver.replace(b"\x00", b"").decode("ascii")))
+    print("Client version: {}".format(PROTOCOL_VERSION.replace(b"\x00", b"").decode("ascii")))
 
     if serverver != PROTOCOL_VERSION:
         print("Hold on, that's not the right version... Disconnect!")
@@ -144,16 +144,26 @@ def sync(ip, port=3514):
         newmsg = message.from_serialised(msg)
         known_messages[newmsg.msgid] = newmsg
 
+    print("Synced Sucessfully")
+    print("Sent the server {} messages".format(len(tosend)))
+    print("Got sent {} messages".format(len(torecv)))
+
 
 def listen(socket):
     conn, addr = s.accept()
     clientver = conn.recv(16)
+    print("{} connected".format(addr))
+    print("Server version: {}".format(PROTOCOL_VERSION.replace(b"\x00",b"").decode("ascii")))
+    print("Client version: {}".format(clientver.replace(b"\x00",b"").decode("ascii")))
+
     if clientver != PROTOCOL_VERSION:
+        print("Disconnecting {} due to mismatching versions".format(addr))
         conn.send(PROTOCOL_VERSION)
         conn.close()
         return
 
     conn.send(PROTOCOL_VERSION)
+
 
     client_known_ids = []
 
@@ -197,9 +207,14 @@ def listen(socket):
     # Now I copy paste and hope for the best!
 
     for msg in tosend:
-        tosend = known_messages[msg].serialise()
-        conn.send(int.to_bytes(len(tosend), 8, "big"))
-        conn.sendall(tosend)
+        send = known_messages[msg].serialise()
+        conn.send(int.to_bytes(len(send), 8, "big"))
+        conn.sendall(send)
+
+    print("Synced sucessfuly")
+    print("Sent the server {} messages".format(len(tosend)))
+    print("Got sent {} messages".format(len(torecv)))
+    print()
 
 if sys.argv[1] == "SELFTEST":
     with open("test", "rb") as f:
@@ -221,6 +236,7 @@ if sys.argv[1] == "SERVER":
             m = message(f.read())
             known_messages[m.msgid] = m
     print("Ready")
+    print()
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(("", PORT))
