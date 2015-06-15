@@ -1,0 +1,17 @@
+A == Client
+B == Server
+
+Numbers in (parenthesis) are byte counts
+
+A -> B: Client Version (16)
+B -> A: Server Version (16)
+
+A -> B: Amount of known ID's (2) [KnownID's]
+A -> B: Message ID's (32 * KnownID's)
+B -> A: Amount of known ID's (2) [KnownID's]
+B -> A: Message ID's (32 * KnownID's)
+
+A -> B: Length of messages (8)
+A -> B: All messages known only to A
+B -> A: Length of messages (8)
+B -> A: All messages known only to B

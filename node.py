@@ -1,13 +1,10 @@
-import base64
 import hashlib
-import json
 import os
 import socket
 import sys
-import random
 
 
-POW_DIGITS = 1
+POW_DIGITS = 2
 
 PROTOCOL_VERSION = b"!not(OSX<LinuX)"
 assert len(PROTOCOL_VERSION) <= 16
@@ -30,69 +27,59 @@ def can_int(x):
 class POWerror(Exception):
     pass
 
-
-def convmsg(pgpmsg, proof=-1):
-    msg = {}
-    msg["gpg"] = base64.b64encode(gpgtobytes(pgpmsg))
-    if proof == -1:
-        msg["msgid"] = hashlib.sha256(msg["gpg"]).hexdigest().encode("ascii")
-        x = 0
-        while True:
-            if hashlib.sha256(
-                    str(x).encode("ascii") +
-                    b":" +
-                    msg["msgid"]).hexdigest().startswith("0"*POW_DIGITS):
-                break
-            x += 1
-        msg["proof"] = x
-    else:
-        msg["proof"] = proof
-    msg["gpg"] = msg["gpg"].decode("ascii")
-    msg["msgid"] = msg["msgid"].decode("ascii")
-    return message(json.dumps(msg))
+def mkproof(msgid):
+    proof = 0
+    while True:
+        if hashlib.sha256(
+                    int.to_bytes(proof, 8, "big") +
+                    msgid
+                ).digest().startswith(b"\x00"*POW_DIGITS):
+            break
+        proof += 1
+    return proof
 
 
 class message:
 
+    def from_serialised(sbytes):
+        msgid = sbytes[:32]
+        proof = sbytes[32:40]
+        gpg = sbytes[40:]
+
+        return message(gpg, int.from_bytes(proof, "big"), msgid)
+
     def serialise(self):
-        return json.dumps({
-            "msgid": self.msgid,
-            "proof": str(self.proof),
-            "gpg": base64.b64encode(self.gpgmsg).decode("ascii"),
-        })
+        x = bytes()
 
-    def __init__(self, messagejson):
-        x = json.loads(messagejson)
-        self.msgid = x["msgid"]
-        expectedmsgid = hashlib.sha256(x["gpg"].encode("ascii")).hexdigest()
-        if not(self.msgid == expectedmsgid):
-            raise ValueError("Message ID does not match expected ID")
-        self.gpgmsg = base64.b64decode(x["gpg"])
-        self.proof = x["proof"]
+        x += self.msgid
+        x += int.to_bytes(self.proof, 8, "big")
+        x += self.gpg
 
-        proofhash = hashlib.sha256("{}:{}".format(
-            self.proof
-            self.msgid
-        ).encode("ascii"))
-        if not proofhash.startswith("0"*POW_DIGITS):
+        return x
+
+    def __init__(self, gpg, proof=-1, msgid=""):
+        if msgid == "":
+            self.msgid = hashlib.sha256(gpg).digest()
+        else:
+            self.msgid = msgid
+            expectedmsgid = hashlib.sha256(gpg).digest()
+            if not(self.msgid == expectedmsgid):
+                raise ValueError("Message ID does not match expected ID")
+        if proof == -1:
+            self.proof = mkproof(self.msgid)
+        else:
+            self.proof = proof
+
+        self.gpg = gpg
+
+        proofhash = hashlib.sha256(int.to_bytes(self.proof, 8, "big") + self.msgid).digest()
+        if not proofhash.startswith(b"\x00"*POW_DIGITS):
             raise POWerror("Invalid proof when creating message")
 
     def __repr__(self):
-        return "message {}:{}".format(self.proof, self.msgid)
-
-
-def gpgtobytes(gpg):
-    b64 = gpg.split("\n")
-    b64 = [x for x in b64 if x != ""]
-    # Remove blank lines. Not strictly needed, but helpful
-    x = 0
-    while not(b64[x].startswith("-----BEGIN PGP MESSAGE-----")):
-        x += 1
-    start = x + 1
-    while not(b64[x].startswith("-----END PGP MESSAGE-----")):
-        x += 1
-    finish = x - 1
-    return base64.b64decode("".join(b64[start:finish]))
+        return "message {}:{}".format(
+            hex(self.proof),
+            hex(int.from_bytes(self.msgid, "big")))
 
 
 def sync(ip, port=3514):
@@ -114,8 +101,8 @@ def sync(ip, port=3514):
     known_ids = [x for x in known_messages]
     print("I know of {} message, their ID's are below.".format(len(known_ids)))
     for x in known_ids:
-        print("    " + x)
-    ids = "".join(known_ids).encode("ascii")
+        print(hex(int.from_bytes(x, "big")))
+    ids = b"".join(known_ids)
 
     lenids = int.to_bytes(len(known_ids), 2, "big")
 
@@ -131,7 +118,7 @@ def sync(ip, port=3514):
 
     s.sendall(ids)
 
-    print("Known messages to the server sent")
+    print("Known ID's to the server sent")
 
     data = b""
 
@@ -140,9 +127,9 @@ def sync(ip, port=3514):
     server_known_ids = []
 
     for _ in range(server_lenids):
-        nextid = s.recv(64)
+        nextid = s.recv(32)
         print("got an ID, {}".format(nextid))
-        server_known_ids.append(nextid.decode("ascii"))
+        server_known_ids.append(nextid)
 
     print(server_known_ids)
 
@@ -168,16 +155,16 @@ def sync(ip, port=3514):
         s.close()
         return
 
-    print("I need to send {} ID's to the server".format(len(tosend)))
+    print("I need to send {} messages to the server".format(len(tosend)))
     print("They are below")
     print()
     for x in tosend:
         print(x)
 
     for msg in tosend:
-        tosend = known_messages[msg].serialise().encode("ascii")
-        s.send(int.to_bytes(len(tosend), 8, "big"))
-        s.sendall(tosend)
+        msg = known_messages[msg].serialise()
+        s.send(int.to_bytes(len(msg), 8, "big"))
+        s.sendall(msg)
 
     print("I am going to be sent {} messages, their ID's:".format(len(torecv)))
     for x in torecv:
@@ -191,7 +178,7 @@ def sync(ip, port=3514):
         print("Just got a message, printing it out now")
         print(msg)
         print("Creating message object")
-        newmsg = message(msg.decode("ascii"))
+        newmsg = message.from_serialised(msg)
         print(newmsg)
         print("Adding new message object to the set of known messages")
         known_messages[newmsg.msgid] = newmsg
@@ -227,29 +214,32 @@ def listen(socket):
     print("As bytes: {}".format(client_lenids_bytes))
     print("As an integer: {}".format(client_lenids))
 
+
+    print(client_lenids)
     for _ in range(client_lenids):
-        nextid = conn.recv(64)
+        print(_)
+        nextid = conn.recv(32)
         print("got an ID, {}".format(nextid))
-        client_known_ids.append(nextid.decode("ascii"))
+        client_known_ids.append(nextid)
 
     print("The client knows of {} messages, their ID's:".format(
         len(client_known_ids)))
 
     for x in client_known_ids:
-        print("    " + x)
+        print(b"    " + x)
 
     # Now do it again, in reverse
 
     known_ids = [x for x in known_messages]
     print("I know of {} message, their ID's are below.".format(len(known_ids)))
     for x in known_ids:
-        print("    " + x)
+        print(b"    " + x)
 
     lenids = len(known_ids)
     lenids_bytes = int.to_bytes(lenids, 2, "big")
     conn.send(lenids_bytes)
 
-    tosend = "".join(known_ids).encode("ascii")
+    tosend = b"".join(known_ids)
     conn.sendall(tosend)
 
     print("-"*30)
@@ -291,7 +281,7 @@ def listen(socket):
         print("Just got a message, printing it out now")
         print(msg)
         print("Creating message object")
-        newmsg = message(msg.decode("ascii"))
+        newmsg = message.from_serialised(msg)
         print(newmsg)
         print("Adding new message object to the set of known messages")
         known_messages[newmsg.msgid] = newmsg
@@ -305,7 +295,7 @@ def listen(socket):
     # Now I copy paste and hope for the best!
 
     for msg in tosend:
-        tosend = known_messages[msg].serialise().encode("ascii")
+        tosend = known_messages[msg].serialise()
         conn.send(int.to_bytes(len(tosend), 8, "big"))
         conn.sendall(tosend)
 
@@ -315,15 +305,25 @@ def listen(socket):
     print()
     print()
 
+
+if sys.argv[1] == "SELFTEST":
+    with open("test", "rb") as f:
+        gpg = f.read()
+        msg = message(gpg)
+        serl = msg.serialise()
+        msg2 = message.from_serialised(serl)
+
+        assert msg.serialise() == msg2.serialise()
+
 for path in os.listdir("both"):
-    with open("both/" + path) as f:
-        m = convmsg(f.read())
+    with open("both/" + path, "rb") as f:
+        m = message(f.read())
         known_messages[m.msgid] = m
 
 if sys.argv[1] == "SERVER":
     for path in os.listdir("server"):
-        with open("server/" + path) as f:
-            m = convmsg(f.read())
+        with open("server/" + path, "rb") as f:
+            m = message(f.read())
             known_messages[m.msgid] = m
     print("Ready")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -335,14 +335,8 @@ if sys.argv[1] == "SERVER":
 
 if sys.argv[1] == "CLIENT":
     for path in os.listdir("client"):
-        with open("client/" + path) as f:
-            m = convmsg(f.read())
+        with open("client/" + path, "rb") as f:
+            m = message(f.read())
             known_messages[m.msgid] = m
 
-    sync("localhost")
-    print()
-    print("*"*60)
-    print("==syncing AGAIN, should be a NOP==")
-    print("*"*60)
-    print()
     sync("localhost")

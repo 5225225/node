@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 
 mkdir both client test
-echo $RANDOM | gpg --encrypt --armor > both/test
-echo $RANDOM | gpg --encrypt --armor > client/test
-echo $RANDOM | gpg --encrypt --armor > server/test
+echo $RANDOM | gpg --encrypt > both/test
+echo $RANDOM | gpg --encrypt > client/test
+echo $RANDOM | gpg --encrypt > server/test
