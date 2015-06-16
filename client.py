@@ -129,27 +129,29 @@ while True:
         print("Run a sync against a known node, or wait for the syncd to run")
 
     elif command == "read":
-        foundmsgs = []
-        wantedhex = arguments[0]
-        if not(wantedhex.startswith("0x")):
-            wantedhex = "0x" + wantedhex
-        wantedhex = wantedhex.encode("ascii")
-
-        for msgid in known_messages:
-            msgidhex = tohex(msgid)
-            if msgidhex.startswith(wantedhex.decode("ascii")):
-                foundmsgs.append(msgid)
-
-        if len(foundmsgs) > 1:
-            print("More than one message found, be more specific")
-        elif len(foundmsgs) == 0:
-            print("No messages found")
+        if len(arguments) == 0:
+            print("What do you want me to read?")
         else:
-            
-            msg = known_messages[foundmsgs[0]].gpg
-            decrypted = subprocess.check_output("gpg", input=msg,
-            stderr=subprocess.DEVNULL).decode("UTF-8")
-            print(decrypted)
+            foundmsgs = []
+            wantedhex = arguments[0]
+            if not(wantedhex.startswith("0x")):
+                wantedhex = "0x" + wantedhex
+            wantedhex = wantedhex.encode("ascii")
+
+            for msgid in known_messages:
+                msgidhex = tohex(msgid)
+                if msgidhex.startswith(wantedhex.decode("ascii")):
+                    foundmsgs.append(msgid)
+
+            if len(foundmsgs) > 1:
+                print("More than one message found, be more specific")
+            elif len(foundmsgs) == 0:
+                print("No messages found")
+            else:
+                msg = known_messages[foundmsgs[0]].gpg
+                decrypted = subprocess.check_output("gpg", input=msg,
+                stderr=subprocess.DEVNULL).decode("UTF-8")
+                print(decrypted)
 
     else:
         print("Unknown command")
