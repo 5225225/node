@@ -5,6 +5,7 @@ import tempfile
 import subprocess
 import os
 import util
+import sys
 
 known_messages = {}
 my_messages = set()
@@ -69,7 +70,13 @@ def sync(ip, port=3514):
     print("Sent the server {} messages".format(len(tosend)))
     print("Got sent {} messages".format(len(torecv)))
 
-f = open("client/test", "rb")
+try:
+    f = open("client/test", "rb")
+except FileNotFoundError:
+    print("Run the mktest.sh script to generate test data")
+    print("Alternatively, put a GPG encrypted message in client/test")
+    sys.exit(1)
+
 print("inserting test message at client/test")
 x = message.message(f.read())
 known_messages[x.msgid] = x
