@@ -1,8 +1,13 @@
 import config
 import message
 import socket
+import tempfile
+import subprocess
+import os
 
 known_messages = {}
+my_messages = set()
+# To avoid duplication, my_messages is simply a set of message ID's
 
 def sync(ip, port=3514):
 
@@ -70,10 +75,78 @@ def sync(ip, port=3514):
     print("Got sent {} messages".format(len(torecv)))
 
 f = open("client/test", "rb")
+print("inserting test message at client/test")
 x = message.message(f.read())
 known_messages[x.msgid] = x
-
+first_help = True
 while True:
-    sync("localhost", config.PORT)
-    input()
+    print()
+    x = input("> ").split(" ")
+    command, arguments = x[0], x[1:]
+    if command == "sync":
+        if len(arguments) == 2:
+            sync(arguments[0], int(arguments[1]))
+        elif len(arguments) == 1:
+            sync(arguments[0])
+        elif len(arguments) == 0:
+            sync("localhost")
 
+    elif command == "ls":
+        for msgid in known_messages:
+            print(hex(int.from_bytes(msgid, "big")))
+
+    elif command == "help" and len(arguments) == 0:
+        if first_help:
+            print("Square brackets indicate optional arguments")
+            print("A default is given for some commands")
+            print("")
+            first_help = False
+        print("sync [IP = localhost] [PORT = 3514]")
+        print("ls")
+        print("help")
+
+    elif command == "msg":
+        messagef = tempfile.mkstemp()[1]
+        subprocess.call(["/usr/bin/vim", messagef])
+        msgf = open(messagef)
+        data = msgf.read()
+        msgf.close()
+        os.unlink(messagef)
+
+        encsign = subprocess.check_output(
+            ["gpg", "--encrypt", "--sign"],
+            input=data.encode("UTF-8"),
+        )
+
+        newmsg = message.message(encsign)
+        known_messages[newmsg.msgid] = newmsg
+        print("Message added to known messages")
+        print("You may wan to run a sync.")
+
+    elif command == "read":
+        foundmsgs = []
+        wantedhex = arguments[1]
+        if not(wantedhex.startswith("0x"))
+            wantedhex = "0x" + wantedhex
+        wantedhex = wantedhex.encode("ascii")
+
+        for msgid in known_messages:
+            msgidhex = str(hex(int.from_bytes(msgid, "big")))
+            if msgid.startswith(wantedhex):
+                foundmsgs.append(msgid)
+
+        if len(foundmsgs) > 1:
+            print("More than one message found, be more specific")
+        elif len(foundmsgs) == 0:
+            print("No messages found")
+        else:
+
+        for msgid in known_messages:
+            if msgid.startswith(arguments[1].encode("ascii"))
+            msg = known_messages[msgid].gpg
+            decrypted = subprocess.check_output("gpg", input=msg,
+            stderr=subprocess.DEVNULL)
+            print(decrypted)
+
+    else:
+        print("Unknown command")
