@@ -9,6 +9,10 @@ known_messages = {}
 my_messages = set()
 # To avoid duplication, my_messages is simply a set of message ID's
 
+def tohex(bytestring):
+    return str(hex(int.from_bytes(bytestring, "big")))
+    
+
 def sync(ip, port=3514):
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,7 +97,7 @@ while True:
 
     elif command == "ls":
         for msgid in known_messages:
-            print(hex(int.from_bytes(msgid, "big")))
+            print(tohex(msgid))
 
     elif command == "help" and len(arguments) == 0:
         if first_help:
@@ -120,19 +124,20 @@ while True:
 
         newmsg = message.message(encsign)
         known_messages[newmsg.msgid] = newmsg
+        print("ID: {}".format(tohex(newmsg.msgid)))
         print("Message added to known messages")
-        print("You may wan to run a sync.")
+        print("Run a sync against a known node, or wait for the syncd to run")
 
     elif command == "read":
         foundmsgs = []
-        wantedhex = arguments[1]
-        if not(wantedhex.startswith("0x"))
+        wantedhex = arguments[0]
+        if not(wantedhex.startswith("0x")):
             wantedhex = "0x" + wantedhex
         wantedhex = wantedhex.encode("ascii")
 
         for msgid in known_messages:
-            msgidhex = str(hex(int.from_bytes(msgid, "big")))
-            if msgid.startswith(wantedhex):
+            msgidhex = tohex(msgid)
+            if msgidhex.startswith(wantedhex.decode("ascii")):
                 foundmsgs.append(msgid)
 
         if len(foundmsgs) > 1:
@@ -140,12 +145,10 @@ while True:
         elif len(foundmsgs) == 0:
             print("No messages found")
         else:
-
-        for msgid in known_messages:
-            if msgid.startswith(arguments[1].encode("ascii"))
-            msg = known_messages[msgid].gpg
+            
+            msg = known_messages[foundmsgs[0]].gpg
             decrypted = subprocess.check_output("gpg", input=msg,
-            stderr=subprocess.DEVNULL)
+            stderr=subprocess.DEVNULL).decode("UTF-8")
             print(decrypted)
 
     else:
