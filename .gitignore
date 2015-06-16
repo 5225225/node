@@ -2,3 +2,4 @@ both
 client
 server
 __pycache__/
+*.pyc
