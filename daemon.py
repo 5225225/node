@@ -1,15 +1,17 @@
 import socket
 import message
 import config
+import util
 
 known_messages = {}
+
 
 def listen(socket):
     conn, addr = s.accept()
     clientver = conn.recv(16)
     print("{} connected".format(addr))
-    print("Server version: {}".format(config.PROTOCOL_VERSION.replace(b"\x00",b"").decode("ascii")))
-    print("Client version: {}".format(clientver.replace(b"\x00",b"").decode("ascii")))
+    print("Server version: {}".format(util.btostring(config.PROTOCOL_VERSION)))
+    print("Client version: {}".format(util.btostring(clientver)))
 
     if clientver != config.PROTOCOL_VERSION:
         print("Disconnecting {} due to mismatching versions".format(addr))
@@ -19,12 +21,10 @@ def listen(socket):
 
     conn.send(config.PROTOCOL_VERSION)
 
-
     client_known_ids = []
 
     client_lenids_bytes = conn.recv(2)
     client_lenids = int.from_bytes(client_lenids_bytes, "big")
-
 
     for _ in range(client_lenids):
         nextid = conn.recv(32)
@@ -40,7 +40,6 @@ def listen(socket):
 
     tosend = b"".join(known_ids)
     conn.sendall(tosend)
-
 
     server_ids = set(known_ids)
     client_ids = set(client_known_ids)

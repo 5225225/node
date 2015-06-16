@@ -1,8 +1,10 @@
 import config
 import hashlib
 
+
 class POWerror(Exception):
     pass
+
 
 def mkproof(msgid):
     proof = 0
@@ -49,7 +51,9 @@ class message:
 
         self.gpg = gpg
 
-        proofhash = hashlib.sha256(int.to_bytes(self.proof, 8, "big") + self.msgid).digest()
+        proofhash = hashlib.sha256(
+            int.to_bytes(self.proof, 8, "big") +
+            self.msgid).digest()
         if not proofhash.startswith(b"\x00"*config.POW_DIGITS):
             raise POWerror("Invalid proof when creating message")
 
@@ -57,4 +61,3 @@ class message:
         return "message {}:{}".format(
             hex(self.proof),
             hex(int.from_bytes(self.msgid, "big")))
-

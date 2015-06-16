@@ -4,17 +4,14 @@ import socket
 import tempfile
 import subprocess
 import os
+import util
 
 known_messages = {}
 my_messages = set()
 # To avoid duplication, my_messages is simply a set of message ID's
 
-def tohex(bytestring):
-    return str(hex(int.from_bytes(bytestring, "big")))
-    
 
 def sync(ip, port=3514):
-
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print("Connecting to {}:{}".format(ip, port))
@@ -22,8 +19,8 @@ def sync(ip, port=3514):
     s.send(config.PROTOCOL_VERSION)
     serverver = s.recv(16)
     print("Connected to server")
-    print("Server version: {}".format(serverver.replace(b"\x00", b"").decode("ascii")))
-    print("Client version: {}".format(config.PROTOCOL_VERSION.replace(b"\x00", b"").decode("ascii")))
+    print("Server version: {}".format(util.btostring(serverver)))
+    print("Client version: {}".format(util.btostring(config.PROTOCOL_VERSION)))
 
     if serverver != config.PROTOCOL_VERSION:
         print("Hold on, that's not the right version... Disconnect!")
@@ -33,16 +30,10 @@ def sync(ip, port=3514):
 
     known_ids = [x for x in known_messages]
     ids = b"".join(known_ids)
-
     lenids = int.to_bytes(len(known_ids), 2, "big")
-
     s.send(lenids)
-
     s.sendall(ids)
-
-
     data = b""
-
     server_lenids_bytes = s.recv(2)
     server_lenids = int.from_bytes(server_lenids_bytes, "big")
     server_known_ids = []
@@ -97,7 +88,7 @@ while True:
 
     elif command == "ls":
         for msgid in known_messages:
-            print(tohex(msgid))
+            print(util.tohex(msgid))
 
     elif command == "help" and len(arguments) == 0:
         if first_help:
@@ -124,7 +115,7 @@ while True:
 
         newmsg = message.message(encsign)
         known_messages[newmsg.msgid] = newmsg
-        print("ID: {}".format(tohex(newmsg.msgid)))
+        print("ID: {}".format(util.tohex(newmsg.msgid)))
         print("Message added to known messages")
         print("Run a sync against a known node, or wait for the syncd to run")
 
@@ -139,7 +130,7 @@ while True:
             wantedhex = wantedhex.encode("ascii")
 
             for msgid in known_messages:
-                msgidhex = tohex(msgid)
+                msgidhex = util.tohex(msgid)
                 if msgidhex.startswith(wantedhex.decode("ascii")):
                     foundmsgs.append(msgid)
 
@@ -149,8 +140,10 @@ while True:
                 print("No messages found")
             else:
                 msg = known_messages[foundmsgs[0]].gpg
-                decrypted = subprocess.check_output("gpg", input=msg,
-                stderr=subprocess.DEVNULL).decode("UTF-8")
+                decrypted = subprocess.check_output("gpg",
+                                                    input=msg,
+                                                    stderr=subprocess.DEVNULL
+                                                    ).decode("UTF-8")
                 print(decrypted)
 
     else:
