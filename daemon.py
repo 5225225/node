@@ -3,6 +3,8 @@ import message
 import config
 import util
 
+util.vercheck()
+
 known_messages = {}
 
 

@@ -7,6 +7,8 @@ import os
 import util
 import sys
 
+util.vercheck()
+
 known_messages = {}
 my_messages = set()
 # To avoid duplication, my_messages is simply a set of message ID's
