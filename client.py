@@ -27,8 +27,7 @@ def sync(ip, port=3514):
 
     if serverver != config.PROTOCOL_VERSION:
         print("Hold on, that's not the right version... Disconnect!")
-        s.shutdown(socket.SHUT_RDWR)
-        s.close()
+        util.closesocket(s)
         return
 
     known_ids = [x for x in known_messages]
@@ -53,8 +52,7 @@ def sync(ip, port=3514):
 
     if len(tosend) == 0 and len(torecv) == 0:
         print("Actually, I have nothing to do! Shutting down")
-        s.shutdown(socket.SHUT_RDWR)
-        s.close()
+        util.closesocket(s)
         return
 
     for msg in tosend:

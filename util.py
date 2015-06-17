@@ -1,4 +1,14 @@
 import sys
+import socket
+
+
+def closesocket(s):
+    # TODO find out why OSX complains about this
+    try:
+        s.shutdown(socket.SHUT_RDWR)
+        s.close()
+    except OSError:
+        pass
 
 
 def btostring(bytestring):

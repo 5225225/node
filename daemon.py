@@ -18,7 +18,7 @@ def listen(socket):
     if clientver != config.PROTOCOL_VERSION:
         print("Disconnecting {} due to mismatching versions".format(addr))
         conn.send(config.PROTOCOL_VERSION)
-        conn.close()
+        util.closesocket(conn)
         return
 
     conn.send(config.PROTOCOL_VERSION)
@@ -51,7 +51,7 @@ def listen(socket):
 
     if len(tosend) == 0 and len(torecv) == 0:
         print("Actually, I have nothing to do! Shutting down")
-        conn.close()
+        util.closesocket(conn)
         return
 
     for _ in range(len(torecv)):
