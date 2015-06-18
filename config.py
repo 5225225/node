@@ -6,3 +6,5 @@ PROTOCOL_VERSION = (bytes(16) + PROTOCOL_VERSION)[-16:]
 
 PORT = 3514
 VERBOSE = False
+
+MSGDIR = "msgs/"

@@ -5,7 +5,7 @@ import util
 
 util.vercheck()
 
-known_messages = {}
+known_messages = message.messagestore(config.MSGDIR)
 
 
 def listen(socket):
@@ -34,7 +34,7 @@ def listen(socket):
 
     # Now do it again, in reverse
 
-    known_ids = [x for x in known_messages]
+    known_ids = [x for x in known_messages.keys()]
 
     lenids = len(known_ids)
     lenids_bytes = int.to_bytes(lenids, 2, "big")

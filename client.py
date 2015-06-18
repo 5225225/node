@@ -9,7 +9,7 @@ import sys
 
 util.vercheck()
 
-known_messages = {}
+known_messages = message.messagestore(config.MSGDIR)
 my_messages = set()
 # To avoid duplication, my_messages is simply a set of message ID's
 
@@ -30,7 +30,7 @@ def sync(ip, port=3514):
         util.closesocket(s)
         return
 
-    known_ids = [x for x in known_messages]
+    known_ids = [x for x in known_messages.keys()]
     ids = b"".join(known_ids)
     lenids = int.to_bytes(len(known_ids), 2, "big")
     s.send(lenids)
@@ -94,7 +94,7 @@ while True:
             sync("localhost")
 
     elif command == "ls":
-        for msgid in known_messages:
+        for msgid in known_messages.keys():
             print(util.tohex(msgid))
 
     elif command == "help" and len(arguments) == 0:
@@ -136,7 +136,7 @@ while True:
                 wantedhex = "0x" + wantedhex
             wantedhex = wantedhex.encode("ascii")
 
-            for msgid in known_messages:
+            for msgid in known_messages.keys():
                 msgidhex = util.tohex(msgid)
                 if msgidhex.startswith(wantedhex.decode("ascii")):
                     foundmsgs.append(msgid)

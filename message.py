@@ -1,5 +1,7 @@
 import config
 import hashlib
+import os
+import util
 
 
 class POWerror(Exception):
@@ -16,6 +18,35 @@ def mkproof(msgid):
             break
         proof += 1
     return proof
+
+
+class messagestore():
+
+    def __getitem__(self, key):
+        itempath = self.path + key
+        with open(itempath, "rb") as f:
+            data = f.read()
+        return message.fromserialised(data)
+
+    def __setitem__(self, key, value):
+        itempath = self.path + util.tohex(key)
+        with open(itempath, "wb") as f:
+            f.write(value.serialise())
+
+    def keys(self):
+        paths = list(os.listdir(self.path))
+        bytepaths = []
+        for item in paths:
+            bytepaths.append(util.fromhex(item, 32))
+
+        return bytepaths
+
+    def __init__(self, path):
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.path = path
+        if not(self.path.endswith("/")):
+            self.path = self.path + "/"
 
 
 class message:
