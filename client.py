@@ -10,9 +10,6 @@ import sys
 util.vercheck()
 
 known_messages = message.messagestore(config.MSGDIR)
-my_messages = set()
-# To avoid duplication, my_messages is simply a set of message ID's
-
 
 def sync(ip, port=3514):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,88 +67,3 @@ def sync(ip, port=3514):
     print("Sent the server {} messages".format(len(tosend)))
     print("Got sent {} messages".format(len(torecv)))
 
-try:
-    f = open("client/test", "rb")
-except FileNotFoundError:
-    print("Run the mktest.sh script to generate test data")
-    print("Alternatively, put a GPG encrypted message in client/test")
-    sys.exit(1)
-
-print("inserting test message at client/test")
-x = message.message(f.read())
-known_messages[x.msgid] = x
-first_help = True
-while True:
-    print()
-    x = input("> ").split(" ")
-    command, arguments = x[0], x[1:]
-    if command == "sync":
-        if len(arguments) == 2:
-            sync(arguments[0], int(arguments[1]))
-        elif len(arguments) == 1:
-            sync(arguments[0])
-        elif len(arguments) == 0:
-            sync("localhost")
-
-    elif command == "ls":
-        for msgid in known_messages.keys():
-            print(util.tohex(msgid))
-
-    elif command == "help" and len(arguments) == 0:
-        if first_help:
-            print("Square brackets indicate optional arguments")
-            print("A default is given for some commands")
-            print("")
-            first_help = False
-        print("sync [IP = localhost] [PORT = 3514]")
-        print("ls")
-        print("help")
-
-    elif command == "msg":
-        messagef = tempfile.mkstemp()[1]
-        subprocess.call(["/usr/bin/vim", messagef])
-        msgf = open(messagef)
-        data = msgf.read()
-        msgf.close()
-        os.unlink(messagef)
-
-        encsign = subprocess.check_output(
-            ["gpg", "--encrypt", "--sign"],
-            input=data.encode("UTF-8"),
-        )
-
-        newmsg = message.message(encsign)
-        known_messages[newmsg.msgid] = newmsg
-        print("ID: {}".format(util.tohex(newmsg.msgid)))
-        print("Message added to known messages")
-        print("Run a sync against a known node, or wait for the syncd to run")
-
-    elif command == "read":
-        if len(arguments) == 0:
-            print("What do you want me to read?")
-        else:
-            foundmsgs = []
-            wantedhex = arguments[0]
-            if not(wantedhex.startswith("0x")):
-                wantedhex = "0x" + wantedhex
-            wantedhex = wantedhex.encode("ascii")
-
-            for msgid in known_messages.keys():
-                msgidhex = util.tohex(msgid)
-                if msgidhex.startswith(wantedhex.decode("ascii")):
-                    foundmsgs.append(msgid)
-
-            if len(foundmsgs) > 1:
-                print("More than one message found, be more specific")
-            elif len(foundmsgs) == 0:
-                print("No messages found")
-            else:
-                msg = known_messages[foundmsgs[0]].gpg
-                decrypted = subprocess.check_output("gpg",
-                                                    input=msg,
-                                                    stderr=subprocess.DEVNULL
-                                                    ).decode("UTF-8")
-                print(decrypted)
-
-    else:
-        print("Unknown command")

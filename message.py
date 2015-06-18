@@ -23,10 +23,10 @@ def mkproof(msgid):
 class messagestore():
 
     def __getitem__(self, key):
-        itempath = self.path + key
+        itempath = self.path + util.tohex(key)
         with open(itempath, "rb") as f:
             data = f.read()
-        return message.fromserialised(data)
+        return message.from_serialised(data)
 
     def __setitem__(self, key, value):
         itempath = self.path + util.tohex(key)
