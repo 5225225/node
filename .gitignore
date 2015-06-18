@@ -4,3 +4,4 @@ server
 __pycache__/
 *.pyc
 msgs/
+known_hosts
