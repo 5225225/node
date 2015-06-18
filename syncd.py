@@ -24,5 +24,4 @@ while True:
     for item in hosts:
         print(item)
         client.sync(item)
-        time.sleep(.5)
-#        time.sleep(60*random.uniform(5,1.5))
+        time.sleep(240*random.uniform(5,1.5))
