@@ -11,6 +11,7 @@ util.vercheck()
 
 known_messages = message.messagestore(config.MSGDIR)
 
+
 def discover_hosts(port=config.BROADPORT):
     known_addrs = []
 
@@ -26,6 +27,7 @@ def discover_hosts(port=config.BROADPORT):
         except socket.timeout:
             break
     return known_addrs
+
 
 def sync(ip, port=3514):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -82,4 +84,3 @@ def sync(ip, port=3514):
     print("Synced Sucessfully")
     print("Sent the server {} messages".format(len(tosend)))
     print("Got sent {} messages".format(len(torecv)))
-
