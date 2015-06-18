@@ -1,23 +1,19 @@
 import config
 import message
 import socket
+import client
+import random
 
-def discover_hosts(port=config.BROADPORT):
-    known_addrs = []
+lan_hosts = {}
+wan_hosts = {}
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    s.sendto(b"PING", ("255.255.255.255", port))
-    s.settimeout(2)
-    while True:
-        try:
-            data, addr = s.recvfrom(4)
-            if data == b"PONG":
-                known_addrs.append(addr[0])
-        except socket.timeout:
-            break
-    print(known_addrs)
-    return known_addrs
-
-known_messages = message.messagestore(config.MSGDIR)
-discover_hosts()
+if config.CREATE_BROADCASTS:
+    print("Going to try to discover LAN hosts")
+    lan_hosts = client.discover_hosts()
+    print("I found {} hosts".format(len(lan_hosts)))
+    print("Printing them below")
+    for host in lan_hosts:
+        print(host)
+else:
+    print("Not going to try to discover LAN hosts.")
+    print("If you want to enable this, set CREATE_BROADCASTS in config.py")
