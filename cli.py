@@ -36,17 +36,33 @@ while True:
         print("help")
 
     elif command == "msg":
+        recipients = arguments
+        if len(recipients) == 0:
+            print("Enter email addresses one by one for recipients")
+            print("These must be the same as GPG knows them as")
+            print("The above is very important, you might want to run")
+            print("    gpg --list-keys")
+            print("To make sure you're using the correct email")
+            print("There is currently no error checking for invalid input")
+            print()
+            print("Enter a blank line to end input")
+            while True:
+                r = input("email: ")
+                if r == "":
+                    break
+                recipients.append(r.strip())
+
         messagef = tempfile.mkstemp()[1]
         subprocess.call(["/usr/bin/vim", messagef])
         msgf = open(messagef)
         data = msgf.read()
         msgf.close()
         os.unlink(messagef)
-
-        encsign = subprocess.check_output(
-            ["gpg", "--encrypt", "--sign"],
-            input=data.encode("UTF-8"),
-        )
+        program = ["gpg", "--encrypt", "--sign"]
+        for r in recipients:
+            program.append("-r")
+            program.append(r)
+        encsign = subprocess.check_output(program, input=data.encode("UTF-8"))
 
         newmsg = message.message(encsign)
         known_messages[newmsg.msgid] = newmsg
