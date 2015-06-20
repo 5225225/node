@@ -9,6 +9,7 @@ import os
 known_messages = message.messagestore(config.MSGDIR)
 
 first_help = True
+
 while True:
     print()
     x = input("> ").split(" ")
@@ -52,12 +53,7 @@ while True:
                     break
                 recipients.append(r.strip())
 
-        messagef = tempfile.mkstemp()[1]
-        subprocess.call(["/usr/bin/vim", messagef])
-        msgf = open(messagef)
-        data = msgf.read()
-        msgf.close()
-        os.unlink(messagef)
+        data = util.getinput()
         program = ["gpg", "--encrypt", "--sign"]
         for r in recipients:
             program.append("-r")
@@ -95,7 +91,7 @@ while True:
                                                     input=msg,
                                                     stderr=subprocess.DEVNULL
                                                     ).decode("UTF-8")
-                print(decrypted)
+                util.writeoutput(decrypted)
 
     else:
         print("Unknown command")

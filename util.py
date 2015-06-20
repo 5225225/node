@@ -1,5 +1,27 @@
 import sys
 import socket
+import tempfile
+import subprocess
+import os
+
+
+def getinput():
+    messagef = tempfile.mkstemp()[1]
+    subprocess.call(["/usr/bin/vim", messagef])
+    msgf = open(messagef)
+    data = msgf.read()
+    msgf.close()
+    os.unlink(messagef)
+    return data
+
+
+def writeoutput(data):
+    messagef = tempfile.mkstemp()[1]
+    msgf = open(messagef, "w")
+    msgf.write(data)
+    msgf.close()
+    subprocess.call(["/usr/bin/vim", messagef])
+    os.unlink(messagef)
 
 
 def closesocket(s):
