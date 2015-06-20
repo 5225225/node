@@ -23,5 +23,10 @@ while True:
     random.shuffle(hosts)
     for item in hosts:
         print(item)
-        client.sync(item)
+        try:
+            client.sync(item)
+        except OSError:
+            print("{} doesn't seem to be running anymore".format(item))
+            print("deleting it")
+            del hosts[item]
         time.sleep(240*random.uniform(5, 1.5))
