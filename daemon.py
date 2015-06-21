@@ -43,49 +43,23 @@ def listen(socket):
 
     conn.send(config.PROTOCOL_VERSION)
 
-    client_known_ids = []
+    client_known_ids = util.recv_ids(conn)
+    util.send_ids(conn, known_messages.keys())
 
-    client_lenids_bytes = conn.recv(2)
-    client_lenids = int.from_bytes(client_lenids_bytes, "big")
-
-    for _ in range(client_lenids):
-        nextid = conn.recv(32)
-        client_known_ids.append(nextid)
-
-    # Now do it again, in reverse
-
-    known_ids = [x for x in known_messages.keys()]
-
-    lenids = len(known_ids)
-    lenids_bytes = int.to_bytes(lenids, 2, "big")
-    conn.send(lenids_bytes)
-
-    tosend = b"".join(known_ids)
-    conn.sendall(tosend)
-
-    server_ids = set(known_ids)
+    server_ids = set(known_messages.keys())
     client_ids = set(client_known_ids)
 
-    tosend = server_ids - client_ids
-    torecv = client_ids - server_ids
+    tosend, torecv = util.calc_needed(server_ids, client_ids)
 
     if len(tosend) == 0 and len(torecv) == 0:
         print("Actually, I have nothing to do! Shutting down")
         util.closesocket(conn)
         return
 
-    for _ in range(len(torecv)):
-        msglen = int.from_bytes(conn.recv(8), "big")
-        msg = conn.recv(msglen)
-        newmsg = message.message.from_serialised(msg)
-        known_messages[newmsg.msgid] = newmsg
+    for msg in util.recv_msgs(conn, len(torecv)):
+        known_messages[msg.msgid] = msg
 
-    # Now I copy paste and hope for the best!
-
-    for msg in tosend:
-        send = known_messages[msg].serialise()
-        conn.send(int.to_bytes(len(send), 8, "big"))
-        conn.sendall(send)
+    util.send_msgs(conn, tosend, known_messages)
 
     print("Synced sucessfuly")
     print("Sent the client {} messages".format(len(tosend)))

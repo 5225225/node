@@ -74,6 +74,8 @@ class message:
             self.msgid = msgid
             expectedmsgid = hashlib.sha256(gpg).digest()
             if not(self.msgid == expectedmsgid):
+                print("Given MSGID: {}".format(self.msgid))
+                print("Expected MSGID: {}".format(expectedmsgid))
                 raise ValueError("Message ID does not match expected ID")
         if proof == -1:
             self.proof = mkproof(self.msgid)

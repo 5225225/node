@@ -45,41 +45,23 @@ def sync(ip, port=3514):
         util.closesocket(s)
         return
 
-    known_ids = [x for x in known_messages.keys()]
-    ids = b"".join(known_ids)
-    lenids = int.to_bytes(len(known_ids), 2, "big")
-    s.send(lenids)
-    s.sendall(ids)
-    data = b""
-    server_lenids_bytes = s.recv(2)
-    server_lenids = int.from_bytes(server_lenids_bytes, "big")
-    server_known_ids = []
+    util.send_ids(s, known_messages.keys())
+    server_known_ids = util.recv_ids(s)
 
-    for _ in range(server_lenids):
-        nextid = s.recv(32)
-        server_known_ids.append(nextid)
-
-    client_ids = set(known_ids)
+    client_ids = set(known_messages.keys())
     server_ids = set(server_known_ids)
 
-    tosend = client_ids - server_ids
-    torecv = server_ids - client_ids
+    tosend, torecv = util.calc_needed(client_ids, server_ids)
 
     if len(tosend) == 0 and len(torecv) == 0:
         print("Actually, I have nothing to do! Shutting down")
         util.closesocket(s)
         return
 
-    for msg in tosend:
-        msg = known_messages[msg].serialise()
-        s.send(int.to_bytes(len(msg), 8, "big"))
-        s.sendall(msg)
+    util.send_msgs(s, tosend, known_messages)
 
-    for _ in range(len(torecv)):
-        msglen = int.from_bytes(s.recv(8), "big")
-        msg = s.recv(msglen)
-        newmsg = message.message.from_serialised(msg)
-        known_messages[newmsg.msgid] = newmsg
+    for msg in util.recv_msgs(s, len(torecv)):
+        known_messages[msg.msgid] = msg
 
     print("Synced Sucessfully")
     print("Sent the server {} messages".format(len(tosend)))
