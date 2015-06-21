@@ -7,6 +7,7 @@ import threading
 util.vercheck()
 
 known_messages = message.messagestore(config.MSGDIR)
+known_messages.prune()
 
 
 class broadcast_listen(threading.Thread):
@@ -18,13 +19,9 @@ class broadcast_listen(threading.Thread):
         self.port = config.BROADPORT
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("", self.port))
-        print("Running thread")
         while True:
-            print("Waiting for data")
             data, addr = self.sock.recvfrom(4)
-            print("Got data, printing it out now")
             if data == b"PING":
-                print("Data is PING")
                 self.sock.sendto(b"PONG", addr)
 
 
@@ -71,6 +68,7 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind(("", config.PORT))
 s.listen(5)
 print("Ready!")
+print("I know of {} keys".format(len(known_messages.keys())))
 
 if config.LISTEN_FOR_BROADCASTS:
     broadcast_listen().start()

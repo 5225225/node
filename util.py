@@ -83,7 +83,9 @@ def fromhex(hexstring, length):
 
 
 def tohex(bytestring):
-    return str(hex(int.from_bytes(bytestring, "big")))
+    x = str(hex(int.from_bytes(bytestring, "big")))[2:]
+    x = x.rjust(64, "0")
+    return "0x" + x
 
 
 def vercheck():

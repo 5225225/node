@@ -2,6 +2,7 @@ import config
 import hashlib
 import os
 import util
+import time
 
 
 class POWerror(Exception):
@@ -37,9 +38,29 @@ class messagestore():
         paths = list(os.listdir(self.path))
         bytepaths = []
         for item in paths:
-            bytepaths.append(util.fromhex(item, 32))
-
+            try:
+                bytepaths.append(util.fromhex(item, 32))
+            except ValueError:
+                pass
+                # Likely not a real key, ignore it.
         return bytepaths
+
+    def ignorekey(self, key):
+        with open("ignored-keys", "ab") as f:
+            f.write(key)
+        fname = util.tohex(key)
+        if config.PRUNE_DELETE:
+            os.remove(self.path + fname)
+        else:
+            os.rename(self.path + fname, self.path + "archive/" + fname)
+
+    def prune(self):
+        for msgid in self.keys():
+            ctime = os.stat(self.path + util.tohex(msgid)).st_ctime
+            diff = time.time() - ctime
+            if diff > config.PRUNE_TIME:
+                self.ignorekey(msgid)
+                print("{} is too old, ignoring".format(util.tohex(msgid)))
 
     def __init__(self, path):
         if not os.path.exists(path):
@@ -47,6 +68,13 @@ class messagestore():
         self.path = path
         if not(self.path.endswith("/")):
             self.path = self.path + "/"
+        self.ignored = []
+        with open("ignored-keys", "rb") as f:
+            while True:
+                msgid = f.read(32)
+                if not msgid:
+                    break
+                self.ignored.append(msgid)
 
 
 class message:

@@ -1,3 +1,12 @@
+MINUTES = 60
+HOURS = MINUTES * 60
+DAYS = HOURS * 24
+WEEKS = DAYS * 7
+YEARS = DAYS * 365
+
+# Allows you to do `3 * DAYS` to make configuration clearer.
+# Technically the value for YEARS is wrong, but it's close enough.
+
 POW_DIGITS = 2
 
 PROTOCOL_VERSION = b"!not(OSX<LinuX)"
@@ -11,3 +20,6 @@ VERBOSE = False
 MSGDIR = "msgs/"
 LISTEN_FOR_BROADCASTS = True
 CREATE_BROADCASTS = True
+
+PRUNE_TIME = 7
+PRUNE_DELETE = True
