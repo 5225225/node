@@ -48,6 +48,14 @@ def listen(socket):
 
     tosend, torecv = util.calc_needed(server_ids, client_ids)
 
+    client_ignored_ids = util.recv_ids(conn)
+
+    server_ignored_ids = known_messages.ignored
+    util.send_ids(conn, server_ignored_ids)
+
+    tosend = tosend - client_ignored_ids
+    torecv = torecv - server_ignored_ids
+
     if len(tosend) == 0 and len(torecv) == 0:
         print("Actually, I have nothing to do! Shutting down")
         util.closesocket(conn)

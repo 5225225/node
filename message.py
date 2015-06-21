@@ -68,13 +68,13 @@ class messagestore():
         self.path = path
         if not(self.path.endswith("/")):
             self.path = self.path + "/"
-        self.ignored = []
+        self.ignored = set()
         with open("ignored-keys", "rb") as f:
             while True:
                 msgid = f.read(32)
                 if not msgid:
                     break
-                self.ignored.append(msgid)
+                self.ignored.add(msgid)
 
 
 class message:

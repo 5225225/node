@@ -51,7 +51,15 @@ def sync(ip, port=3514):
     client_ids = set(known_messages.keys())
     server_ids = set(server_known_ids)
 
+    client_ignored_ids = known_messages.ignored
+    util.send_ids(s, client_ignored_ids)
+
+    server_ignored_ids = util.recv_ids(s)
+
     tosend, torecv = util.calc_needed(client_ids, server_ids)
+
+    tosend = tosend - server_ignored_ids
+    torecv = torecv - client_ignored_ids
 
     if len(tosend) == 0 and len(torecv) == 0:
         print("Actually, I have nothing to do! Shutting down")
