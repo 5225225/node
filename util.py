@@ -32,8 +32,11 @@ def send_msgs(sock, tosend, msgstore):
 def recv_msgs(sock, amount):
     messages = []
     for _ in range(amount):
+        data = b""
         msglen = int.from_bytes(sock.recv(8), "big")
-        msg = sock.recv(msglen)
+        while len(data) < msglen:
+            newdata = sock.recv(64)
+            data += newdata
         newmsg = message.message.from_serialised(msg)
         messages.append(newmsg)
 
