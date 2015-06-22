@@ -66,6 +66,22 @@ while True:
         print("Message added to known messages")
         print("Run a sync against a known node, or wait for the syncd to run")
 
+    elif command == "attach":
+        recipients = arguments[:-1]
+        fname = arguments[-1]
+        with open(fname, "rb") as f:
+            data = f.read()
+        program = ["gpg", "--encrypt", "--sign"]
+        for r in recipients:
+            program.append("-r")
+            program.append(r)
+        encsign = subprocess.check_output(program, input=data)
+        newmsg = message.message(encsign)
+        known_messages[newmsg.msgid] = newmsg
+        print("ID: {}".format(util.tohex(newmsg.msgid)))
+        print("Attachment added to known messages")
+        print("Run a sync against a known node, or wait for the syncd to run")
+
     elif command == "read":
         if len(arguments) == 0:
             print("What do you want me to read?")
@@ -90,8 +106,17 @@ while True:
                 decrypted = subprocess.check_output("gpg",
                                                     input=msg,
                                                     stderr=subprocess.DEVNULL
-                                                    ).decode("UTF-8")
-                util.writeoutput(decrypted)
+                                                    )
+                try:
+                    decrypted = decrypted.decode("UTF-8")
+                    util.writeoutput(decrypted)
+                except UnicodeDecodeError:
+                    # Likely a binary file.
+                    print("The file can't be decoded, likely an attachment.")
+                    print("Enter a filename to save it as")
+                    fname = input("fname: ")
+                    with open(fname, "wb") as f:
+                        f.write(decrypted)
 
     else:
         print("Unknown command")
