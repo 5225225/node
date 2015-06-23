@@ -35,7 +35,7 @@ def recv_msgs(sock, amount):
         data = b""
         msglen = int.from_bytes(sock.recv(8), "big")
         while len(data) < msglen:
-            newdata = sock.recv(64)
+            newdata = sock.recv(min(1024, msglen - len(data)))
             data += newdata
         newmsg = message.message.from_serialised(data)
         messages.append(newmsg)
