@@ -37,7 +37,7 @@ def recv_msgs(sock, amount):
         while len(data) < msglen:
             newdata = sock.recv(64)
             data += newdata
-        newmsg = message.message.from_serialised(msg)
+        newmsg = message.message.from_serialised(data)
         messages.append(newmsg)
 
     return messages
