@@ -172,7 +172,12 @@ def runcmd(command, arguments):
             elif len(foundmsgs) == 0:
                 print("No messages found")
             else:
-                msg = known_messages[foundmsgs[0]].gpg
+                try:
+                    msg = known_messages[foundmsgs[0]].gpg
+                except ValueError:
+                    print("Checksum failure on message")
+                    print("The file is most likely corrupt, or there's a bug")
+                    return 1
                 try:
                     decrypted = subprocess.check_output("gpg", input=msg)
                 except subprocess.CalledProcessError:
