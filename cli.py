@@ -195,7 +195,11 @@ def runcmd(command, arguments):
         print("Unknown command")
 
 while True:
-    print()
-    x = input("> ").split(" ")
-    command, arguments = x[0], x[1:]
-    runcmd(command, arguments)
+    try:
+        print()
+        x = input("> ").split(" ")
+        command, arguments = x[0], x[1:]
+        runcmd(command, arguments)
+    except KeyboardInterrupt:
+        print()
+        sys.exit(0)
