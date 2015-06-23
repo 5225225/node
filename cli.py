@@ -195,6 +195,11 @@ def runcmd(command, arguments):
     else:
         print("Unknown command")
 
+if len(sys.argv) > 1:
+    command, arguments = sys.argv[1], sys.argv[2:]
+    retcode = runcmd(command, arguments)
+    sys.exit(retcode)
+
 while True:
     try:
         print()
