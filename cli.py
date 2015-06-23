@@ -12,6 +12,8 @@ known_messages = message.messagestore(config.MSGDIR)
 
 first_help = True
 
+interactive = False
+
 
 def runcmd(command, arguments):
     if command == "sync":
@@ -180,14 +182,20 @@ def runcmd(command, arguments):
                     # the user. Maybe ls should filter out these?
                 try:
                     decrypted = decrypted.decode("UTF-8")
-                    util.writeoutput(decrypted)
+                    if interactive:
+                        util.writeoutput(decrypted)
+                    else:
+                        sys.stdout.write(decrypted)
                 except UnicodeDecodeError:
                     # Likely a binary file.
-                    print("The file can't be decoded, likely an attachment.")
-                    print("Enter a filename to save it as")
-                    fname = input("fname: ")
-                    with open(fname, "wb") as f:
-                        f.write(decrypted)
+                    if interactive:
+                        print("This is a binary file.")
+                        print("Enter a filename to save it as")
+                        fname = input("fname: ")
+                        with open(fname, "wb") as f:
+                            f.write(decrypted)
+                    else:
+                        sys.stdout.buffer.write(decrypted)
 
     elif command in (":q", "quit", "exit", "bye"):
         sys.exit(0)
@@ -196,10 +204,12 @@ def runcmd(command, arguments):
         print("Unknown command")
 
 if len(sys.argv) > 1:
+    interactive = False
     command, arguments = sys.argv[1], sys.argv[2:]
     retcode = runcmd(command, arguments)
     sys.exit(retcode)
 
+interactive = True
 while True:
     try:
         print()
