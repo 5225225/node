@@ -46,6 +46,7 @@ def runcmd(command, arguments):
             print(util.tohex(msgid))
 
     elif command == "help" and len(arguments) == 0:
+        global first_help
         if first_help:
             print("Square brackets indicate optional arguments")
             print("Angle brackets indicate required arguments")
