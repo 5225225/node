@@ -31,7 +31,7 @@ class messagestore():
 
     def __setitem__(self, key, value):
         if self.path == "---null---/":
-            pass
+            return
         itempath = self.path + util.tohex(key)
         with open(itempath, "wb") as f:
             f.write(value.serialise())
