@@ -6,7 +6,7 @@ import threading
 
 util.vercheck()
 
-known_messages = message.messagestore(config.MSGDIR)
+known_messages = message.messagestore("---null---")
 known_messages.prune()
 
 

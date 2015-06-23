@@ -30,11 +30,15 @@ class messagestore():
         return message.from_serialised(data)
 
     def __setitem__(self, key, value):
+        if self.path == "---null---/":
+            pass
         itempath = self.path + util.tohex(key)
         with open(itempath, "wb") as f:
             f.write(value.serialise())
 
     def keys(self):
+        if self.path == "---null---/":
+            return []
         paths = list(os.listdir(self.path))
         bytepaths = []
         for item in paths:
@@ -63,7 +67,7 @@ class messagestore():
                 print("{} is too old, ignoring".format(util.tohex(msgid)))
 
     def __init__(self, path):
-        if not os.path.exists(path):
+        if not os.path.exists(path) and not path == "---null---":
             os.mkdir(path)
         self.path = path
         if not(self.path.endswith("/")):
