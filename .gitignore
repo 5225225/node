@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 msgs/
 known_hosts
+ignored-keys
