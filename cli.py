@@ -5,6 +5,7 @@ import util
 import tempfile
 import subprocess
 import os
+import sys
 
 known_messages = message.messagestore(config.MSGDIR)
 
@@ -39,6 +40,7 @@ while True:
         print("msg [recipients]")
         print("attach [recipients] <filename>")
         print("read <msgid>")
+        print("quit")
     elif command == "help" and len(arguments) > 0:
         helpcmd = arguments[0]
 
@@ -66,6 +68,10 @@ while True:
 
         elif helpcmd == "msg":
             print("Write textual messages in an editor")
+
+        elif helpcmd == "quit":
+            print("Quits the program, because ^C is too hard")
+            print("This isn't the only quit string, however")
 
     elif command == "msg":
         recipients = arguments
@@ -148,6 +154,9 @@ while True:
                     fname = input("fname: ")
                     with open(fname, "wb") as f:
                         f.write(decrypted)
+
+    elif command in (":q", "quit", "exit", "bye"):
+        sys.exit(0)
 
     else:
         print("Unknown command")
