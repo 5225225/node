@@ -11,10 +11,8 @@ known_messages = message.messagestore(config.MSGDIR)
 
 first_help = True
 
-while True:
-    print()
-    x = input("> ").split(" ")
-    command, arguments = x[0], x[1:]
+
+def runcmd(command, arguments):
     if command == "sync":
         if len(arguments) == 2:
             client.sync(arguments[0], int(arguments[1]))
@@ -160,3 +158,9 @@ while True:
 
     else:
         print("Unknown command")
+
+while True:
+    print()
+    x = input("> ").split(" ")
+    command, arguments = x[0], x[1:]
+    runcmd(command, arguments)
