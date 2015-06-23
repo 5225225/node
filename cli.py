@@ -122,15 +122,27 @@ def runcmd(command, arguments):
         print("Run a sync against a known node, or wait for the syncd to run")
 
     elif command == "attach":
+        if len(arguments) < 2:
+            print("You need to include a recipient and the filename")
+            return 1
         recipients = arguments[:-1]
         fname = arguments[-1]
-        with open(fname, "rb") as f:
-            data = f.read()
+        try:
+            with open(fname, "rb") as f:
+                data = f.read()
+        except FileNotFoundError:
+            print("Invalid filename")
+            return 1
+
         program = ["gpg", "--encrypt", "--sign"]
         for r in recipients:
             program.append("-r")
             program.append(r)
-        encsign = subprocess.check_output(program, input=data)
+        try:
+            encsign = subprocess.check_output(program, input=data)
+        except subprocess.CalledProcessError:
+            print("Something happened, GPG was unable to encrypt it.")
+            return 1
         newmsg = message.message(encsign)
         known_messages[newmsg.msgid] = newmsg
         print("ID: {}".format(util.tohex(newmsg.msgid)))
@@ -158,10 +170,13 @@ def runcmd(command, arguments):
                 print("No messages found")
             else:
                 msg = known_messages[foundmsgs[0]].gpg
-                decrypted = subprocess.check_output("gpg",
-                                                    input=msg,
-                                                    stderr=subprocess.DEVNULL
-                                                    )
+                try:
+                    decrypted = subprocess.check_output("gpg", input=msg)
+                except subprocess.CalledProcessError:
+                    print("Something happened. GPG was unable to decrypt it")
+                    return 1
+                    # TODO This is because this wasn't actually addressed to
+                    # the user. Maybe ls should filter out these?
                 try:
                     decrypted = decrypted.decode("UTF-8")
                     util.writeoutput(decrypted)
