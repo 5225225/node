@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import os
 import sys
+import socket
 
 known_messages = message.messagestore(config.MSGDIR)
 
@@ -14,12 +15,31 @@ first_help = True
 
 def runcmd(command, arguments):
     if command == "sync":
-        if len(arguments) == 2:
-            client.sync(arguments[0], int(arguments[1]))
-        elif len(arguments) == 1:
-            client.sync(arguments[0])
-        elif len(arguments) == 0:
-            client.sync("localhost")
+        try:
+            if len(arguments) >= 2:
+                client.sync(arguments[0], int(arguments[1]))
+            elif len(arguments) == 1:
+                client.sync(arguments[0])
+            elif len(arguments) == 0:
+                client.sync("localhost")
+
+        except ConnectionRefusedError:
+            print("Could not connect to daemon at address")
+            return 1
+
+        except (socket.gaierror, OSError):
+            # The gaierror is thrown with an invalid hostname, and the OSError
+            # is thrown with an IP such as 255.255.255.255.
+            print("Malformed address")
+            return 1
+
+        except ValueError:
+            print("Invalid port")
+            return 1
+
+        except OverflowError:
+            print("Port must be between 0 and 65535")
+            return 1
 
     elif command == "ls":
         for msgid in known_messages.keys():
