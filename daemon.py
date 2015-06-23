@@ -61,7 +61,19 @@ def listen(socket):
         util.closesocket(conn)
         return
 
-    for msg in util.recv_msgs(conn, len(torecv)):
+    recvmsgs = []
+    try:
+        recvmsgs = util.recv_msgs(conn, len(torecv))
+    except ValueError:
+        print("*WARNING*")
+        print("Message ID mismatch.")
+        print("This could be a corrupted file, a bug, or intentional")
+        print("Don't trust this client. Still, send your own messages")
+
+        util.send_msgs(conn, tosend, known_messages)
+        return 1
+
+    for msg in recvmsgs:
         known_messages[msg.msgid] = msg
 
     util.send_msgs(conn, tosend, known_messages)
