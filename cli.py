@@ -29,12 +29,43 @@ while True:
     elif command == "help" and len(arguments) == 0:
         if first_help:
             print("Square brackets indicate optional arguments")
+            print("Angle brackets indicate required arguments")
             print("A default is given for some commands")
             print("")
             first_help = False
         print("sync [IP = localhost] [PORT = 3514]")
         print("ls")
-        print("help")
+        print("help [COMMAND]")
+        print("msg [recipients]")
+        print("attach [recipients] <filename>")
+        print("read <msgid>")
+    elif command == "help" and len(arguments) > 0:
+        helpcmd = arguments[0]
+
+        if helpcmd == "sync":
+            print("Push and pull all your currently known messages to the")
+            print("specified server. With no arguments, sync with own daemon")
+            print("which won't do anything, but is good for debugging.")
+
+        elif helpcmd == "ls":
+            print("List all known messages by their msgid. Does not filter")
+            print("for if you can actually read them at the moment")
+
+        elif helpcmd == "help":
+            print("You're using it now.")
+
+        elif helpcmd == "attach":
+            print("Allows you to insert binary files to the network.")
+            print("Currently there are no restrictions, but obviously")
+            print("inserting a 4GB file will be slow, and in the future")
+            print("nodes may reject large files, or delete them sooner.")
+
+        elif helpcmd == "read":
+            print("Read the message specified by the msgid.")
+            print("Partial ids are supported, with/without the 0x prefix.")
+
+        elif helpcmd == "msg":
+            print("Write textual messages in an editor")
 
     elif command == "msg":
         recipients = arguments
