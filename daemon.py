@@ -30,7 +30,13 @@ def listen(socket):
     clientver = conn.recv(16)
     print("{} connected".format(addr))
     print("Server version: {}".format(util.btostring(config.PROTOCOL_VERSION)))
-    print("Client version: {}".format(util.btostring(clientver)))
+    try:
+        print("Client version: {}".format(util.btostring(clientver)))
+    except UnicodeDecodeError:
+        print("Non-ascii client version, disconnect now.")
+        conn.send(config.PROTOCOL_VERSION)
+        util.closesocket(conn)
+        return
 
     if clientver != config.PROTOCOL_VERSION:
         print("Disconnecting {} due to mismatching versions".format(addr))
