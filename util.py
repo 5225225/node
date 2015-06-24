@@ -96,3 +96,14 @@ def vercheck():
         print("This program requires python 3 to be used")
         print("You know, there's a reason why it's called a README.md")
         sys.exit(1)
+
+
+def calccost(lenmsg):
+    hashmax = 2**256
+    if lenmsg < 2048:
+        return hashmax // 1000000
+
+    else:
+        base = 1000000
+        additional = 1000000*(lenmsg/16384)
+        return hashmax // (base + additional)
