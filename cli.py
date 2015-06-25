@@ -7,6 +7,13 @@ import subprocess
 import os
 import sys
 import socket
+import gettext
+
+if config.USE_GETTEXT:
+    print("***Using gettext instead of input()***")
+    print("This is very experimental, and is likely to break easily. There's")
+    print("a reason it's disabled by default")
+    input = gettext.gettext
 
 known_messages = message.messagestore(config.MSGDIR)
 
