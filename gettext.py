@@ -89,7 +89,7 @@ def gettext(prompt):
         if ch == b"\r":
             break
         elif ch == b"\x7f":
-            if string != []:
+            if string != b"":
                 string = rmchar(string, cursor()-2-len(prompt))
                 redraw(prompt, string)
                 outwrite(b"\x1b[D")
