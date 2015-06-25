@@ -105,7 +105,11 @@ def gettext(prompt):
                         outwrite(b"\x1b[D")
         elif ch[0] in range(0x01, 0x1b):
             char = keycodes.lookup[ch]
-            print(char)
+            if char == "^C":
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
+                outwrite(b"\n")
+            else:
+                print(char)
         else:
             begin = string[:cursor()-1-len(prompt)]
             end = string[cursor()-1-len(prompt):]
