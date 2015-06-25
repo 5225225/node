@@ -108,8 +108,9 @@ def gettext(prompt):
             if char == "^C":
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
                 outwrite(b"\n")
+                return ""
             else:
-                print(char)
+                pass
         else:
             begin = string[:cursor()-1-len(prompt)]
             end = string[cursor()-1-len(prompt):]
