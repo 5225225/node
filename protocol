@@ -1,3 +1,81 @@
+The client connects to a server and issues commands.
+
+Commands are terminated by a newline, with any arguments delimited by spaces.
+
+Commands:
+
+VER
+    Get the version of the server.
+    If the protocol is changed in a backwards incompatible way, this should be changed.
+    If the client's version is different to this, they should disconnect.
+
+    First byte is the string length. The client should then read that number of bytes.
+
+KNOWNIDS
+    Get the known message ID's of the server.
+
+    First 4 bytes is the amount of known message ID's. A message ID is sent in
+    binary format and is a SHA256, therefore the amount of bytes to receive is
+    32*len(ids)
+
+GET <message ID> (Hex)
+    Retrives a message ID
+
+    First 8 bytes is the message size in bytes.
+
+PUT <message ID> (Hex)
+
+    Uploads a message by message ID.
+
+    First 8 bytes is the message size in bytes.
+
+    The server will respond with either "OK" or "NO". The client should check
+    for this before continuing to send the message.
+
+    If the server does not want the client to send the message (Possible reasons
+    include the server already has a message by that name), it should indicate
+    by replying with NO. The client should not try to send this message. If it
+    does, the data may be interpreted as commands.
+
+    The server should verify that the message ID matches both the one contained
+    in the message and the sha256 of the GPG data. If any of these do not match,
+    the server may reject the data.
+
+CHECK <message ID> (Hex)
+
+    Checks to see if a message exists on the server. 1 byte code will be
+    returned specifying the message's status
+
+    Code | Status
+    -----+-------
+      Y  | No errors
+      M  | Missing: Does not exist
+
+
+
+Messages may be expired at any time by a server, either through a time delay or
+formula involving the message size. The server 
+
+A server will either need to keep track of all message ID's that it has seen and
+reject ones that have been purged
+
+Message format
+
+message {
+    char[32]  message_id    sha256(submessage)
+    int32     proof_of_work Integer such that sha256(message id) starts with
+                            at least N zero bits, where N varies with difficulty
+    
+    submessage {
+        int64   timestamp  Signed integer value denoting seconds past epoch.
+        char[]  message    Message data. Strictly speaking can be anything, but
+                           is usually GPG encrypted data.
+    }
+}
+
+
+
+
 A == Client
 B == Server
 
