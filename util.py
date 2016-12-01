@@ -67,6 +67,11 @@ def writeoutput(data):
     subprocess.call(["/usr/bin/vim", messagef])
     os.unlink(messagef)
 
+def pascal_str(string, length=1):
+    if len(string) > 256**length:
+        raise ValueError("Length not big enough to fit len(string)")
+    
+    return int.to_bytes(len(string), length, "big") + string
 
 def closesocket(s):
     # TODO find out why OSX complains about this

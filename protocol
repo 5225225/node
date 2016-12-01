@@ -1,95 +1,40 @@
-The client connects to a server and issues commands.
+Message format.
 
-Commands are terminated by a newline, with any arguments delimited by spaces.
-
-Commands:
-
-VER
-    Get the version of the server.
-    If the protocol is changed in a backwards incompatible way, this should be changed.
-    If the client's version is different to this, they should disconnect.
-
-    First byte is the string length. The client should then read that number of bytes.
-
-KNOWNIDS
-    Get the known message ID's of the server.
-
-    First 4 bytes is the amount of known message ID's. A message ID is sent in
-    binary format and is a SHA256, therefore the amount of bytes to receive is
-    32*len(ids)
-
-GET <message ID> (Hex)
-    Retrives a message ID
-
-    First 8 bytes is the message size in bytes.
-
-PUT <message ID> (Hex)
-
-    Uploads a message by message ID.
-
-    First 8 bytes is the message size in bytes.
-
-    The server will respond with either "OK" or "NO". The client should check
-    for this before continuing to send the message.
-
-    If the server does not want the client to send the message (Possible reasons
-    include the server already has a message by that name), it should indicate
-    by replying with NO. The client should not try to send this message. If it
-    does, the data may be interpreted as commands.
-
-    The server should verify that the message ID matches both the one contained
-    in the message and the sha256 of the GPG data. If any of these do not match,
-    the server may reject the data.
-
-CHECK <message ID> (Hex)
-
-    Checks to see if a message exists on the server. 1 byte code will be
-    returned specifying the message's status
-
-    Code | Status
-    -----+-------
-      Y  | No errors
-      M  | Missing: Does not exist
-
-
-
-Messages may be expired at any time by a server, either through a time delay or
-formula involving the message size. The server 
-
-A server will either need to keep track of all message ID's that it has seen and
-reject ones that have been purged
-
-Message format
+message_id = sha256(message)
 
 message {
-    char[32]  message_id    sha256(submessage)
-    int32     proof_of_work Integer such that sha256(message id) starts with
-                            at least N zero bits, where N varies with difficulty
-    
-    submessage {
-        int64   timestamp  Signed integer value denoting seconds past epoch.
-        char[]  message    Message data. Strictly speaking can be anything, but
-                           is usually GPG encrypted data.
-    }
+    char    message_ver Message version.
+
+    int64   pow         Integer such that sha256(message_ver + timestamp + sha256(data) + pow)
+                        starts with at least 20 0 bits.
+
+                        The inner sha256(data) is to make the time to calculate a POW constant, not
+                        depending on the length of data[].
+
+
+    int64   timestamp   Signed integer value denoting seconds past epoch.
+
+    char[]  data        Message data. Strictly speaking can be anything, but
+                        is usually GPG encrypted data.
+}
+
+Header format
+
+message_header {
+    int64    timestamp   Timestamp, signed int.
+    int64    size        Size of message (Full message including metadata, in bytes)
+    char[32] message_id  sha256(message)
 }
 
 
+Syncing format
 
+The client will work with any URL that supports GET and PUT requests. Files are stored as their
+message ID as their name. The plain message ID is used, but servers are encouraged to use a scheme
+that allows thousands of files to exist and be addressed quickly. One such scheme is to put a slash
+after the first 2 characters to avoid too many files being put in the same directory. Another idea
+is using SQLite to have just 1 file.
 
-A == Client
-B == Server
-
-Numbers in (parenthesis) are byte counts
-
-A -> B: Client Version (16)
-B -> A: Server Version (16)
-
-A -> B: Amount of known ID's (2) [KnownID's]
-A -> B: Message ID's (32 * KnownID's)
-B -> A: Amount of known ID's (2) [KnownID's]
-B -> A: Message ID's (32 * KnownID's)
-
-A -> B: Length of messages (8)
-A -> B: All messages known only to A
-B -> A: Length of messages (8)
-B -> A: All messages known only to B
+Apart from messages being stored as that, there must also be an "index" file. This will consist of
+all the message headers that exist, and will help the client quickly determine which hashes it
+should upload or download.
