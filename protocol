@@ -38,3 +38,35 @@ is using SQLite to have just 1 file.
 Apart from messages being stored as that, there must also be an "index" file. This will consist of
 all the message headers that exist, and will help the client quickly determine which hashes it
 should upload or download.
+
+
+    Syncing
+
+syncd: Takes a list of URLs to sync from. Calls do_sync on each URL in turn.
+       Manages delays between syncing, random selection of URLs, automatic syncing when a new
+       message is written.
+
+    do_sync: Takes a URL and reads it's index. Calculates, using the local message dir, which
+             messages needs to be GET/PUT. Runs do_get, do_put with their message_id as an argument
+
+        net_get: Takes a (URL, id) and downloads that message, piping to stdout.
+
+        net_put: Takes a (URL, id(?)) and uploads from stdin. The id is verified.
+
+msgdir_put: Takes a message from stdin, puts in a message dir.
+
+msgdir_get: Takes a id. Pipes message to stdout.
+
+make_msg: Takes a file from stdin and generates a message for it.
+          Fills in message_ver, pow, timestamp.
+
+split_msg: Takes a message from stdin and splits the data part out of it.
+           Checks POW, version. Outputs timestamp, then a newline, then the message.
+
+client: Handles the UI. 
+
+    write_msg: When invoked, starts $EDITOR and allows you to write a text file.
+               Then pipes this to make_msg, then inserts that message into the message dir with
+               msgdir_put.
+
+    read_msg: Takes a message ID and gets the data from msgdir_get. 
