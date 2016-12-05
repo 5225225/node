@@ -1,0 +1,31 @@
+#!/bin/python
+import sys
+import struct
+import datetime
+import hashlib
+
+struct_str = "!BQQ"
+
+header = sys.stdin.buffer.read(struct.calcsize(struct_str))
+data = sys.stdin.buffer.read()
+
+message_ver, proof, timestamp = struct.unpack(struct_str, header)
+dtstamp = datetime.datetime.utcfromtimestamp(timestamp)
+
+s = hashlib.sha256(
+    bytes([message_ver]) +
+    timestamp.to_bytes(8, "big") +
+    hashlib.sha256(data).digest() +
+    proof.to_bytes(8, "big")
+).digest()
+
+if not(bin(int.from_bytes(s, "big"))[2:].zfill(256).startswith("0"*20)):
+    sys.stderr.write("ERR: Proof does not check out!\n")
+    sys.exit(1)
+
+try:
+    sys.stdout.buffer.write((dtstamp.isoformat() + "\n").encode("UTF-8"))
+    sys.stdout.buffer.write(data)
+except BrokenPipeError:
+    # For when this is being piped to head -n1
+    pass

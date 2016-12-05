@@ -1,0 +1,9 @@
+#!/bin/bash
+
+msgfile=$(mktemp)
+
+${EDITOR:-vim} "$msgfile"
+
+./make_msg < "$msgfile" | ./msgdir_put "$(sha256sum "$msgfile")"
+
+

@@ -1,0 +1,14 @@
+#!/bin/python
+import sys
+import subprocess
+import readline
+
+while True:
+    command, *args = input("> ")
+
+    if command == "quit":
+        sys.exit(0)
+    elif command == "write":
+        subprocess.run("./write_msg")
+    elif command == "read":
+        subprocess.run("./read_msg")

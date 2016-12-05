@@ -61,7 +61,15 @@ make_msg: Takes a file from stdin and generates a message for it.
           Fills in message_ver, pow, timestamp.
 
 split_msg: Takes a message from stdin and splits the data part out of it.
-           Checks POW, version. Outputs timestamp, then a newline, then the message.
+           Checks POW, version. Outputs timestamp (ISO with second precision), then a newline, then
+           the message.
+           
+           This is lossless since `head -n1 message > date` will always return the date portion,
+           since it contains no newlines. `tail -n+1 message > data` will always return the data
+           portion, since it will skip the date portion entirely. It does not matter what the data
+           portion contains.
+
+serve_files: Implements a server which allows you to GET/PUT files.
 
 client: Handles the UI. 
 
@@ -70,3 +78,11 @@ client: Handles the UI.
                msgdir_put.
 
     read_msg: Takes a message ID and gets the data from msgdir_get. 
+
+
+gen_index: Takes a message on stdin and generates an index file for it.
+
+diff_index: Takes 2 index files (As arguments), and generates a series of commands needed to sync.
+            Output takes the form `./msgdir_get <id> | ./net_put <url> <id>` to upload
+                              and `./net_get <url> <id> | ./msgdir_put`      to download
+            This way you can simply execute the file in full to sync.

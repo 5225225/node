@@ -1,0 +1,33 @@
+#!/bin/python
+import sys
+import time
+import hashlib
+import binascii
+
+def make_pow(message_ver, timestamp, data, required_zeros=20):
+    """
+    Generates a 8 byte POW that satisfies the condition
+    sha256(message_ver + timestamp + sha256(data) + pow) first 20 bits = 0
+    All input is expected to be of byte array type, and the output will be.
+    """
+
+    shadata = hashlib.sha256(data).digest()
+    
+    i = 0
+    while True:
+        s = hashlib.sha256(message_ver + timestamp + shadata + i.to_bytes(8, "big")).digest()
+        if bin(int.from_bytes(s, "big"))[2:].zfill(256).startswith("0"*required_zeros):
+            break
+        i += 1
+
+    return i.to_bytes(8, "big")
+
+message_ver = bytes([1])
+timestamp = int(time.time()).to_bytes(8, "big")
+data = sys.stdin.buffer.read()
+sys.stdout.buffer.write(
+    message_ver +
+    make_pow(message_ver, timestamp, data) +
+    timestamp +
+    data
+)

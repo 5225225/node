@@ -1,0 +1,4 @@
+#!/bin/bash
+url="$1"
+id="$2"
+curl --upload-file - "$url/$id"

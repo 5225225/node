@@ -1,0 +1,19 @@
+#!/bin/python
+import sys
+import struct
+import hashlib
+
+header_struct = "!BQQ"
+for fname in sys.argv[1:]:
+    with open(fname, "rb") as f:
+        _,_,timestamp = struct.unpack(header_struct, f.read(struct.calcsize(header_struct)))
+        f.seek(0)
+        fdata = f.read()
+        size = len(fdata)
+        msgid = hashlib.sha256(fdata).digest()
+
+        sys.stdout.buffer.write(
+            timestamp.to_bytes(8, "big") +
+            size.to_bytes(8, "big") +
+            msgid
+        )

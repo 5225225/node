@@ -1,0 +1,47 @@
+#!/bin/python
+import datetime
+import struct
+import sys
+
+class header:
+    def __init__(self, timestamp, size, msgid):
+        self.timestamp = datetime.datetime.utcfromtimestamp(timestamp)
+        self.size = size
+        self.msgid = msgid
+
+    def __repr__(self):
+        return "header({}, {}, {})".format(self.timestamp, self.size, self.msgid)
+
+    def __eq__(self, other):
+        return self.msgid == other.msgid
+
+    def __hash__(self):
+        return int.from_bytes(self.msgid, "big")
+
+def scan_index(f):
+    header_struct = "!QQ32s"
+
+    headers = set()
+
+    while True:
+        hdr = f.read(struct.calcsize(header_struct))
+        if not(hdr):
+            break
+        timestamp, size, msgid = struct.unpack(header_struct, hdr)
+
+        headers.add(header(timestamp, size, msgid))
+
+    return headers
+
+local = scan_index(open(sys.argv[1], "rb"))
+remote = scan_index(open(sys.argv[2], "rb"))
+
+to_send = local - remote
+
+to_recv = remote - local
+
+for item in to_send:
+    print("PUT {}".format(item.msgid))
+
+for item in to_recv:
+    print("GET {}".format(item.msgid))

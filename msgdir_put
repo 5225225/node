@@ -1,0 +1,14 @@
+#!/bin/python
+import sys
+import hashlib
+
+message = sys.stdin.buffer.read()
+msgid = hashlib.sha256(message).hexdigest()
+givenmsgid = sys.argv[1]
+
+if msgid == givenmsgid:
+    with open("msgdir/" + msgid, "xb") as f:
+        f.write(message)
+else:
+    sys.stderr.write("Given message ID did not match hash of message\n")
+    sys.exit(1)

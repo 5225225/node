@@ -1,0 +1,42 @@
+#!/bin/python
+import sys
+import time
+import hashlib
+import binascii
+
+def bench_make_pow():
+    """
+    Benchmarks how long it takes (in seconds) to check a single hash.
+    Multiply the result by 1<<(bits) to estimate how long it will take
+    to generate that many zero bits.
+    """
+
+    starttime = time.time()
+    message_ver = bytes([0])
+    timestamp = bytes(8)
+    data = b""
+
+    shadata = hashlib.sha256(data).digest()
+    
+    i = 0
+    for _ in range(1<<20):
+        s = hashlib.sha256(message_ver + timestamp + shadata + i.to_bytes(8, "big")).digest()
+        if bin(int.from_bytes(s, "big"))[2:].zfill(256).startswith("0"*256):
+            pass
+        i += 1
+    endtime = time.time()
+
+    return (endtime - starttime) / (1<<20)
+
+message_ver = bytes([1])
+timestamp = int(time.time()).to_bytes(8, "big")
+data = b"This is a benchmark of the POW"
+
+t = bench_make_pow()
+for bits in range(1,41):
+    print("{}\n\t{:.0f} sec\n\t{:.0f} min\n\t{:.0f} hrs".format(
+        bits,
+        t*(1<<bits),
+        t*(1<<bits) / 60,
+        t*(1<<bits) / 3600,
+    ))

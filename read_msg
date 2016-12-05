@@ -1,0 +1,5 @@
+#!/bin/bash
+id="$1"
+msgfile="$(mktemp)"
+./msgdir_get $id | ./split_msg > "$msgfile"
+less "$msgfile"

@@ -1,0 +1,57 @@
+#!/bin/python
+import http.server
+import subprocess
+
+def iter_chunked(read, bufsize):
+    # Code taken from 
+    # https://github.com/bottlepy/bottle/blob/492985f46318b2051bba6f427cdf4889397b10d5/bottle.py
+    # (Bottle: Python Web Framework)
+    # With modifications
+
+    rn, sem, bs = b'\r\n', b';', b''
+    while True:
+        header = read(1)
+        while header[-2:] != rn:
+            c = read(1)
+            header += c
+            if not c: raise err
+            if len(header) > bufsize: raise err
+        size, _, _ = header.partition(sem)
+        try:
+            maxread = int(size.strip(), 16)
+        except ValueError:
+            raise err
+        if maxread == 0: break
+        buff = bs
+        while maxread > 0:
+            if not buff:
+                buff = read(min(maxread, bufsize))
+            part, buff = buff[:maxread], buff[maxread:]
+            if not part: raise err
+            yield part
+            maxread -= len(part)
+        if read(2) != rn:
+            raise err
+
+
+
+class handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        msgid = self.path.lstrip("/")
+        message = subprocess.check_output(["./msgdir_get", msgid])
+        self.send_response(200)
+        self.send_header("Content-Length", len(message))
+        self.end_headers()
+        self.wfile.write(message)
+    
+    def do_PUT(self):
+        msgid = self.path.lstrip("/")
+        data = b"".join(list(iter_chunked(self.rfile.read, 1024)))
+        subprocess.run(["./msgdir_put", msgid], input=data)
+        self.send_response(200)
+        self.end_headers()
+
+
+server_address = ("", 8808)
+httpd = http.server.HTTPServer(server_address, handler)
+httpd.serve_forever()
